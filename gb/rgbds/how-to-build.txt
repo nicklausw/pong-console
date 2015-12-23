@@ -1,0 +1,19 @@
+how to build pong-gb's rgbds version:
+
+rgbasm -o pong.o pong.z80
+rgblink -t -o pong.gb pong.o
+rgbfix -v -t "PONG NICKLAUSW" pong.gb
+
+note that you'll need to use bentley's
+version of rgbds (note: dependency on bison).
+linux users can just use a simple 'make'.
+to build it on windows, use cygwin with
+bison installed, of course.
+
+
+when compiling rgbds through cygwin:
+if cygwin complains about string functions
+not existing, go in the makefile and add
+"-D_GNU_SOURCE" to REALCFLAGS.
+
+source: https://github.com/bentley/rgbds

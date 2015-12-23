@@ -1,0 +1,13 @@
+how to build pong-gb's wla version:
+
+wla-gb -o pong.z80 pong.o
+
+create a file called linkfile with these contents:
+
+[objects]
+pong.o
+
+then execute:
+wlalink -vd linkfile pong.gb
+
+source: https://github.com/vhelin/wla-dx
