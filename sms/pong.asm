@@ -38,7 +38,7 @@ aPLibMemory instanceof aPLibMemoryStruct
 commentary:
 .db "There's no actual in-game changes in this"
 .db "version. I just added comments on the code"
-.db "where the range is calculated. Enjoy?" 0 "
+.db "where the range is calculated. Enjoy?" ; "
 .ends
 
 
