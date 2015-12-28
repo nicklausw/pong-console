@@ -1,5 +1,5 @@
 ###
-cakefile to build sudoku.
+cakefile to build pong game on gb.
 
 running it is just like a makefile.
 
