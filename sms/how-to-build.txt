@@ -1,4 +1,4 @@
-how to build pong-gb's wla version:
+how to build pong-sms:
 
 
 "I have coffee!"
@@ -15,7 +15,7 @@ sweet, just go to the cmd and type:
 
 bummer. go to the cmd, do:
 
-wla-gb -o pong.z80 pong.o
+wla-z80 -o pong.asm pong.o
 
 create a file called linkfile with these contents:
 
@@ -23,7 +23,7 @@ create a file called linkfile with these contents:
 pong.o
 
 then execute:
-wlalink -vd linkfile pong.gb
+wlalink -vd linkfile pong.sms
 
 
 source: https://github.com/vhelin/wla-dx
