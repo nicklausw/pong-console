@@ -1,0 +1,50 @@
+###
+cakefile to build sudoku.
+
+running it is just like a makefile.
+
+to assemble: cake assemble
+to link: cake link
+to fix: cake fix
+to assemble, link and fix: cake build
+to clean up build files: cake clean
+###
+
+fs = require 'fs'
+{exec} = require 'child_process'
+{execSync} = require 'child_process'
+
+delete_file = (file) ->
+  fs.exists file , (existent) ->
+    if existent
+      fs.unlink file
+
+
+task 'assemble', ->
+  # run the assembler
+  exec 'rgbasm -o pong.o pong.z80', (err, stdout, stderr) ->
+    process.stdout.write stdout if stdout
+    process.stderr.write stderr if stderr
+
+
+task 'link', ->
+  # run the linker
+  exec 'rgblink -t -o pong.gb pong.o', (err, stdout, stderr) ->
+    process.stdout.write stdout if stdout
+    process.stderr.write stderr if stderr
+
+task 'fix', ->
+  # fix
+  exec 'rgbfix -v -t "PONG NICKLAUSW" pong.gb', (err, stdout, stderr) ->
+    process.stdout.write stdout if stdout
+    process.stderr.write stderr if stderr
+
+
+task 'build', ->
+  execSync 'cake assemble'
+  execSync 'cake link'
+  execSync 'cake fix'
+
+# clean just gets rid of the object file.
+task 'clean', ->
+  delete_file('pong.o')

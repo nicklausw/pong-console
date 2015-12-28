@@ -1,5 +1,19 @@
 how to build pong-gb's rgbds version:
 
+"I have coffee!"
+
+sweet, just go to the cmd and type:
+
+"cake assemble" to assemble.
+"cake link" to link.
+"cake build" to assemble and link.
+"cake clean" to get rid of the build files.
+
+
+"I don't have coffee!"
+
+bummer. just type these into the cmd:
+
 rgbasm -o pong.o pong.z80
 rgblink -t -o pong.gb pong.o
 rgbfix -v -t "PONG NICKLAUSW" pong.gb
