@@ -32,8 +32,8 @@ task 'link', ->
 
 
 task 'build', ->
-  execSync 'cake assemble'
-  execSync 'cake link'
+  execute_program 'cake assemble'
+  execute_program 'cake link'
 
 # clean just gets rid of pong.o
 task 'clean', ->
