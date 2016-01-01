@@ -3,26 +3,41 @@ cakefile to build pong game on gb.
 
 running it is just like a makefile.
 
-to build: cake build
+to assemble: cake assemble
+to link: cake link
+to assemble and link: cake build
 to clean up build files: cake clean
 ###
 
 fs = require 'fs'
-{spawnSync} = require 'child_process'
+{exec} = require 'child_process'
+{execSync} = require 'child_process'
 
 delete_file = (file) ->
     fs.exists file , (existent) ->
       if existent
         fs.unlinkSync file
 
+execute_program = (stuff) ->
+  prog = exec stuff
+  prog.stdout.pipe process.stdout
+  prog.stderr.pipe process.stderr
+  prog.on 'exit', ->
+    process.exit()
+
+
+task 'assemble', ->
+  execute_program 'wla-gb -o pong.z80 pong.o'
+
+task 'link', ->
+  fs.openSync 'linkfile', 'w'
+  fs.writeFileSync 'linkfile', '[objects]\npong.o\n'
+
+  execute_program 'wlalink -vd linkfile pong.gb'
+
 task 'build', ->
-  delete_file 'pong.o' # no previous output
-
-  # run the assembler
-  spawnSync 'wla-gb', ['-o', 'pong.z80', 'pong.o'], {stdio:[0,1,2]}
-
-  # run the linker
-  spawnSync 'wlalink', ['-vd', 'linkfile', 'pong.gb'], {stdio:[0,1,2]}
+  execSync 'cake assemble'
+  execSync 'cake link'
 
 
 # clean just gets rid of pong.o.
