@@ -11,6 +11,7 @@ to clean up build files: cake clean
 
 fs = require 'fs'
 {exec} = require 'child_process'
+{execSync} = require 'child_process'
 
 delete_file = (file) ->
   fs.exists file , (existent) ->
@@ -32,8 +33,8 @@ task 'link', ->
 
 
 task 'build', ->
-  execute_program 'cake assemble'
-  execute_program 'cake link'
+  execSync 'cake assemble'
+  execSync 'cake link'
 
 # clean just gets rid of pong.o
 task 'clean', ->
