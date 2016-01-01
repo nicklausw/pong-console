@@ -14,12 +14,12 @@ fs = require 'fs'
 {execSync} = require 'child_process'
 
 delete_file = (file) ->
-    fs.exists file , (existent) ->
-      if existent
-        fs.unlinkSync file
+  fs.exists file , (existent) ->
+     if existent
+       fs.unlinkSync file
 
 execute_program = (stuff) ->
-  prog = exec stuff, (err, stdout, stderr, callback) ->
+  exec stuff, (err, stdout, stderr, callback) ->
     process.stdout.write stdout
     process.stderr.write stderr
     callback?() if callback
