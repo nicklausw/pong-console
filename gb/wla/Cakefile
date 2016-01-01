@@ -19,11 +19,10 @@ delete_file = (file) ->
         fs.unlinkSync file
 
 execute_program = (stuff) ->
-  prog = exec stuff
-  prog.stdout.pipe process.stdout
-  prog.stderr.pipe process.stderr
-  prog.on 'exit', ->
-    process.exit()
+  prog = exec stuff, (err, stdout, stderr, callback) ->
+    process.stdout.write stdout
+    process.stderr.write stderr
+    callback?() if callback
 
 
 task 'assemble', ->
