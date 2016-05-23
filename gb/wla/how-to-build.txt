@@ -1,29 +1,23 @@
 how to build pong-gb's wla version:
 
 
-"I have coffee!"
+"I have gnu make!"
 
 sweet, just go to the cmd and type:
 
-"cake assemble" to assemble.
-"cake link" to link.
-"cake build" to assemble and link.
-"cake clean" to get rid of the build files.
+"make" to build.
+"make clean" to clean up the build files.
 
 
-"I don't have coffee!"
+"I don't have make!"
 
 bummer. go to the cmd, do:
 
-wla-gb -o pong.z80 pong.o
-
-create a file called linkfile with these contents:
-
-[objects]
-pong.o
+wla-gb -o pong.o pong.z80
 
 then execute:
-wlalink -vd linkfile pong.gb
+
+wlalink -v -d linkfile.txt pong.gb
 
 
 source: https://github.com/vhelin/wla-dx

@@ -1,4 +1,4 @@
-how to build pong-sms:
+how to build pong for the nes:
 
 
 "I have gnu make!"
@@ -13,11 +13,11 @@ sweet, just go to the cmd and type:
 
 bummer. go to the cmd, do:
 
-wla-z80 -o pong.o pong.asm
+ca65 pong.s
 
 then execute:
 
-wlalink -v -d linkfile pong.sms
+ld65 -C nes_nrom.cfg -o pong.nes pong.o
 
 
-source: https://github.com/vhelin/wla-dx
+source: https://github.com/cc65/cc65

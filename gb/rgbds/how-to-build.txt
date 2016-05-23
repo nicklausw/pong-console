@@ -1,16 +1,14 @@
 how to build pong-gb's rgbds version:
 
-"I have coffee!"
+"I have gnu make!"
 
 sweet, just go to the cmd and type:
 
-"cake assemble" to assemble.
-"cake link" to link.
-"cake build" to assemble and link.
-"cake clean" to get rid of the build files.
+"make" to build.
+"make clean" to clean up the build files.
 
 
-"I don't have coffee!"
+"I don't have make!"
 
 bummer. just type these into the cmd:
 
