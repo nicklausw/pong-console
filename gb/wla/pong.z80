@@ -33,328 +33,328 @@ slot 2 $c000
 
 .org $40 ;vbi.
 .section "vbi" force
-    reti
+  reti
 .ends
 
 .org $48 ;lcd stat.
 .section "lcd" force
-    reti
+  reti
 .ends
 
 .org $50 ;timer.
 .section "timer" force
-    reti
+  reti
 .ends
 
 .org $58 ;serial.
 .section "serial" force
-    reti
+  reti
 .ends
 
 .org $60 ;high to low.
 .section "htl" force
-    reti
+  reti
 .ends
 
 ; main code
 .org $100
 .section "start" force
-    nop
-    jp main
+  nop
+  jp main
 .ends
 
 
 .struct player
-    score db
-    loc db
+  score db
+  loc db
 .endst
 
 .ramsection "ram" slot 2
-    ball_velo_x db
-    ball_velo_y db
-    game_on db
-    player1 instanceof player
-    player2 instanceof player
+  ball_velo_x db
+  ball_velo_y db
+  game_on db
+  player1 instanceof player
+  player2 instanceof player
 .ends
 
 .enum _OAMRAM
-    ball_y db
-    ball_x db
-    ball_t db
-    ball_p db
-    
-    player1_y db
-    player1_x db
-    player1_t db
-    player1_p db
-    
-    player1_2_y db
-    player1_2_x db
-    player1_2_t db
-    player1_2_p db
+  ball_y db
+  ball_x db
+  ball_t db
+  ball_p db
+  
+  player1_y db
+  player1_x db
+  player1_t db
+  player1_p db
+  
+  player1_2_y db
+  player1_2_x db
+  player1_2_t db
+  player1_2_p db
 
-    player1_3_y db
-    player1_3_x db
-    player1_3_t db
-    player1_3_p db
-    
-    player2_y db
-    player2_x db
-    player2_t db
-    player2_p db
-    
-    player2_2_y db
-    player2_2_x db
-    player2_2_t db
-    player2_2_p db
+  player1_3_y db
+  player1_3_x db
+  player1_3_t db
+  player1_3_p db
+  
+  player2_y db
+  player2_x db
+  player2_t db
+  player2_p db
+  
+  player2_2_y db
+  player2_2_x db
+  player2_2_t db
+  player2_2_p db
 
-    player2_3_y db
-    player2_3_x db
-    player2_3_t db
-    player2_3_p db
+  player2_3_y db
+  player2_3_x db
+  player2_3_t db
+  player2_3_p db
 .ende
 
 
 .section "main"
 main:
-    ld sp, $FFFE
-    di ; Disable interrupts for now
+  ld sp, $FFFE
+  di ; Disable interrupts for now
 
-    ; clear ram
-    ld hl,$c000
-    ld a,0
+  ; clear ram
+  ld hl,$c000
+  ld a,0
 
 -:  xor a
-    ld [hl],a
-    inc hl
-    ld a,h
-    cp $df
-    jr nz,-
-    ld a,l
-    cp $ff
-    jr nz,-
+  ld [hl],a
+  inc hl
+  ld a,h
+  cp $df
+  jr nz,-
+  ld a,l
+  cp $ff
+  jr nz,-
 
 
-    call wait_vblank
+  call wait_vblank
 
-    ld hl, rLCDC
-    ld [hl], LCDCF_OFF
+  ld hl, rLCDC
+  ld [hl], LCDCF_OFF
 
-    ld a, %11100100 ; palette: dark to light
-    ld [rBGP], a ; set background palette
-    ldh [rOBP0-$FF00],a ; Non-DMGs will complain
-    ldh [rOBP1-$FF00],a ; if you don't do this
+  ld a, %11100100 ; palette: dark to light
+  ld [rBGP], a ; set background palette
+  ldh [rOBP0-$FF00],a ; Non-DMGs will complain
+  ldh [rOBP1-$FF00],a ; if you don't do this
 
 
-    ; Clear OAM
-    ld hl, _OAMRAM
-    ld a,  _OAMRAM_LEN
+  ; Clear OAM
+  ld hl, _OAMRAM
+  ld a,  _OAMRAM_LEN
 
 -:  ld [hl], 0
-    inc hl
-    dec a
-    jr nz,-
+  inc hl
+  dec a
+  jr nz,-
 
 
-    ; clear screen
-    ld hl, _SCRN0
-    ld bc, SCRN_VX_B * SCRN_VY_B
-    
+  ; clear screen
+  ld hl, _SCRN0
+  ld bc, SCRN_VX_B * SCRN_VY_B
+  
 -:  xor a
-    ld [hl+],a
-    dec c
-    jr nz,-
-    dec b
-    jr nz,-
-    
+  ld [hl+],a
+  dec c
+  jr nz,-
+  dec b
+  jr nz,-
+  
 
-    ; Load solid black 8x8 sprite into OBJ[0] memory
-    ld hl, _VRAM
-    ld a,14*8
-    ld b,a
-    ld de,tile_data
+  ; Load solid black 8x8 sprite into OBJ[0] memory
+  ld hl, _VRAM
+  ld a,14*8
+  ld b,a
+  ld de,tile_data
 
 
 -:  ld a,[de]
-    ld [hl+], a ; clear out tile 0
-    ld [hl+], a
-    inc de
-    dec b
-    ld a,b
-    jr nz,-
+  ld [hl+], a ; clear out tile 0
+  ld [hl+], a
+  inc de
+  dec b
+  ld a,b
+  jr nz,-
 
 
-    call reset_ball
-    
-    ld a,2
-    ld [ball_t],a
+  call reset_ball
+  
+  ld a,2
+  ld [ball_t],a
 
-    ld a,1
-    ld [player1_t],a
-    ld [player1_2_t],a
-    ld [player1_3_t],a
+  ld a,1
+  ld [player1_t],a
+  ld [player1_2_t],a
+  ld [player1_3_t],a
 
-    ld a,3
-    ld [player2_t],a
-    ld [player2_2_t],a
-    ld [player2_3_t],a
-    
-    ld a,$10
-    ld [player1_x],a
-    ld [player1_2_x],a
-    ld [player1_3_x],a
+  ld a,3
+  ld [player2_t],a
+  ld [player2_2_t],a
+  ld [player2_3_t],a
+  
+  ld a,$10
+  ld [player1_x],a
+  ld [player1_2_x],a
+  ld [player1_3_x],a
 
-    ld a,SCRN_X-$8
-    ld [player2_x],a
-    ld [player2_2_x],a
-    ld [player2_3_x],a
+  ld a,SCRN_X-$8
+  ld [player2_x],a
+  ld [player2_2_x],a
+  ld [player2_3_x],a
 
-    call set_paddles
+  call set_paddles
 
 
-    ; Enable LCDC and OBJ sprites
-    ld hl, rLCDC
-    ld [hl], LCDCF_BG8000 | LCDCF_BGON | LCDCF_OBJON | LCDCF_ON ; Enable OBJ sprites and LCD controller
+  ; Enable LCDC and OBJ sprites
+  ld hl, rLCDC
+  ld [hl], LCDCF_BG8000 | LCDCF_BGON | LCDCF_OBJON | LCDCF_ON ; Enable OBJ sprites and LCD controller
 
-    ld a, IEF_VBLANK
-    ld [rIE],a ; vblanks on
+  ld a, IEF_VBLANK
+  ld [rIE],a ; vblanks on
 
-    ei
+  ei
 
 
 
 -:  halt
-    nop
+  nop
 
-    ld a,[game_on]
-    cp PAUSED
-    jr nz,+
-    call display_scores
-    call display_scores
-    call update_paddles
-    call update_paddles
-    call get_a
+  ld a,[game_on]
+  cp PAUSED
+  jr nz,+
+  call display_scores
+  call display_scores
+  call update_paddles
+  call update_paddles
+  call get_a
 
-    ld a,PLAYING
-    ld [game_on],a
+  ld a,PLAYING
+  ld [game_on],a
 
 +:  call move_ball
-    call display_scores
-    call update_paddles
-    call collision
-    call paddle_col
-    call player1_move
-    call player2_move  
-    jr -
+  call display_scores
+  call update_paddles
+  call collision
+  call paddle_col
+  call player1_move
+  call player2_move  
+  jr -
 .ends
 
 
 .section "wait_vblank"
 wait_vblank:
-    ldh a, [rSTAT-$FF00]
-    and 2
-    jr nz, wait_vblank
-    ret
+  ldh a, [rSTAT-$FF00]
+  and 2
+  jr nz, wait_vblank
+  ret
 .ends
 
 
 .section "controller"
 controller:
-    push bc
+  push bc
 
-    ld a,P1F_5    ; get dpad
-    ld [rP1],a
-    ld a,[rP1]
-    ld a,[rP1]    ; wait for joypad fatigue
+  ld a,P1F_5  ; get dpad
+  ld [rP1],a
+  ld a,[rP1]
+  ld a,[rP1]  ; wait for joypad fatigue
 
-    cpl    ; reverse bits (not necessary?)
-    and $0f ; get rid of bits 4-7
-    swap a    ; swap >a and <a
-    ld b,a
+  cpl  ; reverse bits (not necessary?)
+  and $0f ; get rid of bits 4-7
+  swap a  ; swap >a and <a
+  ld b,a
 
-    ld a,P1F_4    ; select P15
-    ld [rP1],a
+  ld a,P1F_4  ; select P15
+  ld [rP1],a
 
-    ld a,[rP1]
-    ld a,[rP1]
-    ld a,[rP1]
-    ld a,[rP1]
-    ld a,[rP1]
-    ld a,[rP1]    ; wait even more for joypad fatigue
+  ld a,[rP1]
+  ld a,[rP1]
+  ld a,[rP1]
+  ld a,[rP1]
+  ld a,[rP1]
+  ld a,[rP1]  ; wait even more for joypad fatigue
 
-    cpl    ; not necessary again?
-    and $0f    ; see above
-    or b    ; combine with b
+  cpl  ; not necessary again?
+  and $0f  ; see above
+  or b  ; combine with b
 
-    pop bc
-    ret
+  pop bc
+  ret
 .ends
 
 
 .section "get_a"
 get_a:
-    halt
-    nop
-    call controller
-    bit PA.DB_A,a
-    jr z,get_a
-    ret
+  halt
+  nop
+  call controller
+  bit PA.DB_A,a
+  jr z,get_a
+  ret
 .ends
 
 
 .section "display_scores"
 display_scores:
-    ld hl,$9821
-    ld a,[player1.score]
-    swap a
-    and $0f
-    add 4
-    ld [hl+],a
-    ld a,[player1.score]
-    and $0f
-    add 4
-    ld [hl],a
+  ld hl,$9821
+  ld a,[player1.score]
+  swap a
+  and $0f
+  add 4
+  ld [hl+],a
+  ld a,[player1.score]
+  and $0f
+  add 4
+  ld [hl],a
 
 
-    ld hl,$9831
-    ld a,[player2.score]
-    swap a
-    and $0f
-    add 4
-    ld [hl+],a
-    ld a,[player2.score]
-    and $0f
-    add 4
-    ld [hl],a
-    ret
+  ld hl,$9831
+  ld a,[player2.score]
+  swap a
+  and $0f
+  add 4
+  ld [hl+],a
+  ld a,[player2.score]
+  and $0f
+  add 4
+  ld [hl],a
+  ret
 .ends
 
 
 .section "player1_move"
 player1_move:
-    call controller
-    bit PA.DB_UP,a
-    jr z,+
+  call controller
+  bit PA.DB_UP,a
+  jr z,+
 
-    ld a,[player1_y]
-    cp 16
-    ret z
+  ld a,[player1_y]
+  cp 16
+  ret z
 
-    dec a
-    dec a
-    ld [player1_y],a
+  dec a
+  dec a
+  ld [player1_y],a
 
 +:  call controller
-    bit PA.DB_DOWN,a
-    jr z,+
+  bit PA.DB_DOWN,a
+  jr z,+
 
-    ld a,[player1_y]
-    cp SCRN_Y-8
-    ret z
+  ld a,[player1_y]
+  cp SCRN_Y-8
+  ret z
 
-    inc a
-    inc a
-    ld [player1_y],a
+  inc a
+  inc a
+  ld [player1_y],a
 
 +:  ret
 .ends
@@ -362,117 +362,117 @@ player1_move:
 
 .section "player2_move"
 player2_move:
-    ld a,[player2_2_y]
-    ld b,a
-    ld a,[ball_y]
+  ld a,[player2_2_y]
+  ld b,a
+  ld a,[ball_y]
 
-    cp b
-    jr c,_up
+  cp b
+  jr c,_up
 
-    cp b
-    jr nc,_down
+  cp b
+  jr nc,_down
 
 _down:
-    ld a,[player2_y]
-    cp SCRN_Y-8
-    ret z
+  ld a,[player2_y]
+  cp SCRN_Y-8
+  ret z
 
-    inc a
-    inc a
-    ld [player2_y],a
-    call update_paddles
-    ret
+  inc a
+  inc a
+  ld [player2_y],a
+  call update_paddles
+  ret
 
 _up:
-    ld a,[player2_y]
-    cp 16
-    ret z
+  ld a,[player2_y]
+  cp 16
+  ret z
 
-    dec a
-    dec a
-    ld [player2_y],a
-    call update_paddles
+  dec a
+  dec a
+  ld [player2_y],a
+  call update_paddles
 
-    ret
+  ret
 .ends
 
 
 .section "set_paddles"
 set_paddles:
-    ld a,$50
-    ld [player1_y],a
-    ld [player2_y],a
-    ret
+  ld a,$50
+  ld [player1_y],a
+  ld [player2_y],a
+  ret
 .ends
 
 
 .section "update_paddles"
 update_paddles:
-    ld a,[player1_y]
-    add 8
-    ld [player1_2_y],a
-    add 8
-    ld [player1_3_y],a
+  ld a,[player1_y]
+  add 8
+  ld [player1_2_y],a
+  add 8
+  ld [player1_3_y],a
 
-    ld a,[player2_y]
-    add 8
-    ld [player2_2_y],a
-    add 8
-    ld [player2_3_y],a
-    ret
+  ld a,[player2_y]
+  add 8
+  ld [player2_2_y],a
+  add 8
+  ld [player2_3_y],a
+  ret
 .ends
 
 
 .section "collision"
 collision:
-    ld a,[ball_x]
-    cp 8
-    jr nz,+
+  ld a,[ball_x]
+  cp 8
+  jr nz,+
 
-    ld a,[player2.score]
-    inc a
-    daa
-    ld [player2.score],a
+  ld a,[player2.score]
+  inc a
+  daa
+  ld [player2.score],a
 
-    call set_paddles
-    call reset_ball
+  call set_paddles
+  call reset_ball
 
-    xor a
-    ld [game_on],a
-    ret
+  xor a
+  ld [game_on],a
+  ret
 
 +:  ld a,[ball_x]
-    cp SCRN_X
-    jr nz,+
+  cp SCRN_X
+  jr nz,+
 
-    ld a,[player1.score]
-    inc a
-    daa
-    ld [player1.score],a
+  ld a,[player1.score]
+  inc a
+  daa
+  ld [player1.score],a
 
-    call set_paddles
-    call reset_ball
+  call set_paddles
+  call reset_ball
 
-    xor a
-    ld [game_on],a
-    ret
-
-+:  ld a,[ball_y]
-    cp 16
-    jr nz,+
-
-    ld a,[ball_velo_y]
-    xor 1
-    ld [ball_velo_y],a
-    ret
+  xor a
+  ld [game_on],a
+  ret
 
 +:  ld a,[ball_y]
-    cp SCRN_Y+8
-    jr nz,+
+  cp 16
+  jr nz,+
 
-    ld a,[ball_velo_y]
-    xor 1
-    ld [ball_velo_y],a
+  ld a,[ball_velo_y]
+  xor 1
+  ld [ball_velo_y],a
+  ret
+
++:  ld a,[ball_y]
+  cp SCRN_Y+8
+  jr nz,+
+
+  ld a,[ball_velo_y]
+  xor 1
+  ld [ball_velo_y],a
 
 +:  ret
 .ends
@@ -480,41 +480,41 @@ collision:
 
 .section "paddle_col"
 paddle_col:
-    ld a,[player1_x]
-    add 8
-    ld b,a
-    ld a,[ball_x]
-    cp b
-    jr nz,+
+  ld a,[player1_x]
+  add 8
+  ld b,a
+  ld a,[ball_x]
+  cp b
+  jr nz,+
 
-    ld a,[ball_y]
-    ld b,a
-    ld a,[player1_y]
-    call calcrange
-    cp 1
-    jr z,+
+  ld a,[ball_y]
+  ld b,a
+  ld a,[player1_y]
+  call calcrange
+  cp 1
+  jr z,+
 
-    ld a,[ball_velo_x]
-    xor 1
-    ld [ball_velo_x],a
+  ld a,[ball_velo_x]
+  xor 1
+  ld [ball_velo_x],a
 
 +:  ld a,[player2_x]
-    sbc 8
-    ld b,a
-    ld a,[ball_x]
-    cp b
-    jr nz,+
+  sbc 8
+  ld b,a
+  ld a,[ball_x]
+  cp b
+  jr nz,+
 
-    ld a,[ball_y]
-    ld b,a
-    ld a,[player2_y]
-    call calcrange
-    cp 1
-    jr z,+
+  ld a,[ball_y]
+  ld b,a
+  ld a,[player2_y]
+  call calcrange
+  cp 1
+  jr z,+
 
-    ld a,[ball_velo_x]
-    xor 1
-    ld [ball_velo_x],a
+  ld a,[ball_velo_x]
+  xor 1
+  ld [ball_velo_x],a
 
 +:  ret
 .ends
@@ -522,40 +522,40 @@ paddle_col:
 
 .section "move_ball"
 move_ball:
-    ld a,[ball_velo_x]
-    cp 1
-    jr z,move_right
+  ld a,[ball_velo_x]
+  cp 1
+  jr z,move_right
 
-    ; move left
-    ld a,[ball_x]
-    dec a
-    dec a
-    ld [ball_x],a
-    jr move_x_end
+  ; move left
+  ld a,[ball_x]
+  dec a
+  dec a
+  ld [ball_x],a
+  jr move_x_end
 
 move_right:
-    ld a,[ball_x]
-    inc a
-    inc a
-    ld [ball_x],a
+  ld a,[ball_x]
+  inc a
+  inc a
+  ld [ball_x],a
 
 move_x_end:
-    ld a,[ball_velo_y]
-    cp 1
-    jr z,move_down
+  ld a,[ball_velo_y]
+  cp 1
+  jr z,move_down
 
-    ; move up
-    ld a,[ball_y]
-    dec a
-    dec a
-    ld [ball_y],a
-    jr move_y_end
+  ; move up
+  ld a,[ball_y]
+  dec a
+  dec a
+  ld [ball_y],a
+  jr move_y_end
 
 move_down:
-    ld a,[ball_y]
-    inc a
-    inc a
-    ld [ball_y],a
+  ld a,[ball_y]
+  inc a
+  inc a
+  ld [ball_y],a
 
 move_y_end: ret
 .ends
@@ -563,11 +563,11 @@ move_y_end: ret
 
 .section "reset_ball"
 reset_ball:
-    ld a,(SCRN_X+8)/2
-    ld [ball_x],a
-    ld a,(SCRN_Y+16)/2
-    ld [ball_y],a
-    ret
+  ld a,(SCRN_X+8)/2
+  ld [ball_x],a
+  ld a,(SCRN_Y+16)/2
+  ld [ball_y],a
+  ret
 .ends
 
 
@@ -575,27 +575,27 @@ reset_ball:
 .section "range" free
 calcrange:
 
-    ; a = paddle y
-    ; b = ball y
+  ; a = paddle y
+  ; b = ball y
 
-    sbc 8
+  sbc 8
 
-    cp b
-    jr z,++
-    jr nc,_nocalc
+  cp b
+  jr z,++
+  jr nc,_nocalc
 
 +:  add 40
-    cp b
-    jr z,++
-    jr c,_nocalc
+  cp b
+  jr z,++
+  jr c,_nocalc
 
 ++: ld a,2
-    ret
+  ret
 
 
 _nocalc:
-    ld a,1
-    ret
+  ld a,1
+  ret
 .ends
 
 
