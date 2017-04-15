@@ -1,0 +1,571 @@
+; pong by nicklausw
+; rgbds edition!
+
+
+.include "gb.z80"
+.include "gb-z80.inc"
+
+PAUSED = 0
+PLAYING = 1
+
+
+.segment "BSS"
+ball_velo_x: .res 1
+ball_velo_y: .res 1
+game_on: .res 1
+player1score: .res 1
+player1loc: .res 1
+player2score: .res 1
+player2loc: .res 1
+
+
+.segment "OAM"
+ball_y: .res 1
+ball_x: .res 1
+ball_t: .res 1
+ball_p: .res 1
+
+player1_y: .res 1
+player1_x: .res 1
+player1_t: .res 1
+player1_p: .res 1
+
+player1_2_y: .res 1
+player1_2_x: .res 1
+player1_2_t: .res 1
+player1_2_p: .res 1
+
+player1_3_y: .res 1
+player1_3_x: .res 1
+player1_3_t: .res 1
+player1_3_p: .res 1
+
+player2_y: .res 1
+player2_x: .res 1
+player2_t: .res 1
+player2_p: .res 1
+
+player2_2_y: .res 1
+player2_2_x: .res 1
+player2_2_t: .res 1
+player2_2_p: .res 1
+
+player2_3_y: .res 1
+player2_3_x: .res 1
+player2_3_t: .res 1
+player2_3_p: .res 1
+
+
+.segment "VBI"
+  reti
+
+.segment "LCD"
+  reti
+
+.segment "TIMER"
+  reti
+
+.segment "SERIAL"
+  reti
+
+.segment "HTL"
+  reti
+
+.segment "START"
+  nop
+  jp main
+
+; reserve header; rgbfix handles it
+.word 0,0,0,0,0,0,0,0
+.word 0,0,0,0,0,0,0,0
+.word 0,0,0,0,0,0,0,0
+.word 0,0,0,0,0,0,0,0
+.word 0,0,0,0,0,0
+
+
+.segment "CODE"
+main:
+  ld sp, $FFFE
+  di ; Disable interrupts for now
+
+  ; clear ram
+  ld hl,$c000
+  ld a,0
+
+ram_loop:
+  xor a
+  ld (hl+),a
+  ld a,h
+  cp $df
+  jr nz,ram_loop
+  ld a,l
+  cp $ff
+  jr nz,ram_loop
+
+
+  call wait_vblank
+
+  ld hl, rLCDC
+  ld (hl), LCDCF_OFF
+
+  ld a, %11100100 ; palette: dark to light
+  ld (rBGP), a ; set background palette
+  ldh (rOBP0),a ; Non-DMGs will complain
+  ldh (rOBP1),a ; if you don't do this
+
+
+  ; Clear OAM
+  ld hl, _OAMRAM
+  ld a,  _OAMRAM_LEN
+
+oam_loop:
+  ld (hl), 0
+  inc hl
+  dec a
+  jr nz,oam_loop
+
+
+  ; clear screen
+  ld hl, _SCRN0
+  ld bc, SCRN_VX_B * SCRN_VY_B
+
+scr_loop:  xor a
+  ld (hl+),a
+  dec c
+  jr nz,scr_loop
+  dec b
+  jr nz,scr_loop
+
+
+  ; Load solid black 8x8 sprite into OBJ(0) memory
+  ld hl, _VRAM
+  ld a,14*8
+  ld b,a
+  ld de,tile_data
+
+
+ld_loop:  ld a,(de)
+  ld (hl+), a ; clear out tile 0
+  ld (hl+), a
+  inc de
+  dec b
+  ld a,b
+  jr nz,ld_loop
+
+
+  call reset_ball
+
+  ld a,2
+  ld (ball_t),a
+
+  ld a,1
+  ld (player1_t),a
+  ld (player1_2_t),a
+  ld (player1_3_t),a
+
+  ld a,3
+  ld (player2_t),a
+  ld (player2_2_t),a
+  ld (player2_3_t),a
+
+  ld a,$10
+  ld (player1_x),a
+  ld (player1_2_x),a
+  ld (player1_3_x),a
+
+  ld a,SCRN_X-$8
+  ld (player2_x),a
+  ld (player2_2_x),a
+  ld (player2_3_x),a
+
+  call set_paddles
+
+
+  ; Enable LCDC and OBJ sprites
+  ld hl, rLCDC
+  ld (hl), LCDCF_BG8000 | LCDCF_BGON | LCDCF_OBJON | LCDCF_ON ; Enable OBJ sprites and LCD controller
+
+  ld a, IEF_VBLANK
+  ld (rIE),a ; vblanks on
+
+  ei
+
+
+
+main_loop:
+  halt
+  nop
+
+  ld a,(game_on)
+  cp PAUSED
+  jr nz,not_paused
+  call display_scores
+  call display_scores
+  call update_paddles
+  call update_paddles
+  call get_a
+
+  ld a,PLAYING
+  ld (game_on),a
+
+not_paused:
+  call move_ball
+  call display_scores
+  call update_paddles
+  call collision
+  call paddle_col
+  call player1_move
+  call player2_move
+  jr main_loop
+
+
+wait_vblank:
+  ldh a, (rSTAT)
+  and 2
+  jr nz, wait_vblank
+  ret
+
+
+
+controller:
+  push bc
+
+  ld a,P1F_5  ; get dpad
+  ld (rP1),a
+  ld a,(rP1)
+  ld a,(rP1)  ; wait for joypad fatigue
+
+  cpl  ; reverse bits (not necessary?)
+  and $0f ; get rid of bits 4-7
+  swap a  ; swap >a and <a
+  ld b,a
+
+  ld a,P1F_4  ; select P15
+  ld (rP1),a
+
+  ld a,(rP1)
+  ld a,(rP1)
+  ld a,(rP1)
+  ld a,(rP1)
+  ld a,(rP1)
+  ld a,(rP1)  ; wait even more for joypad fatigue
+
+  cpl  ; not necessary again?
+  and $0f  ; see above
+  or b  ; combine with b
+
+  pop bc
+  ret
+
+
+get_a:
+  halt
+  nop
+  call controller
+  bit PADB_A,a
+  jr z,get_a
+  ret
+
+
+display_scores:
+  ld hl,$9821
+  ld a,(player1score)
+  swap a
+  and $0f
+  add 4
+  ld (hl+),a
+  ld a,(player1score)
+  and $0f
+  add 4
+  ld (hl),a
+
+
+  ld hl,$9831
+  ld a,(player2score)
+  swap a
+  and $0f
+  add 4
+  ld (hl+),a
+  ld a,(player2score)
+  and $0f
+  add 4
+  ld (hl),a
+  ret
+
+
+player1_move:
+  call controller
+  bit PADB_UP,a
+  jr z,no_p1_up
+
+  ld a,(player1_y)
+  cp 16
+  ret z
+
+  dec a
+  dec a
+  ld (player1_y),a
+
+no_p1_up:
+  call controller
+  bit PADB_DOWN,a
+  jr z,no_p1_do
+
+  ld a,(player1_y)
+  cp SCRN_Y-8
+  ret z
+
+  inc a
+  inc a
+  ld (player1_y),a
+
+no_p1_do:  ret
+
+
+
+player2_move:
+  ld a,(player2_2_y)
+  ld b,a
+  ld a,(ball_y)
+
+  cp b
+  jr c,_up
+
+  cp b
+  jr nc,_down
+
+_down:
+  ld a,(player2_y)
+  cp SCRN_Y-8
+  ret z
+
+  inc a
+  inc a
+  ld (player2_y),a
+  call update_paddles
+  ret
+
+_up:
+  ld a,(player2_y)
+  cp 16
+  ret z
+
+  dec a
+  dec a
+  ld (player2_y),a
+  call update_paddles
+
+  ret
+
+
+set_paddles:
+  ld a,$50
+  ld (player1_y),a
+  ld (player2_y),a
+  ret
+
+
+update_paddles:
+  ld a,(player1_y)
+  add 8
+  ld (player1_2_y),a
+  add 8
+  ld (player1_3_y),a
+
+  ld a,(player2_y)
+  add 8
+  ld (player2_2_y),a
+  add 8
+  ld (player2_3_y),a
+  ret
+
+
+collision:
+  ld a,(ball_x)
+  cp 8
+  jr nz,left_b
+
+  ld a,(player2score)
+  inc a
+  daa
+  ld (player2score),a
+
+  call set_paddles
+  call reset_ball
+
+  xor a
+  ld (game_on),a
+  ret
+
+left_b:
+  ld a,(ball_x)
+  cp SCRN_X
+  jr nz,right_b
+
+  ld a,(player1score)
+  inc a
+  daa
+  ld (player1score),a
+
+  call set_paddles
+  call reset_ball
+
+  xor a
+  ld (game_on),a
+  ret
+
+right_b:
+  ld a,(ball_y)
+  cp 16
+  jr nz,top_b
+
+  ld a,(ball_velo_y)
+  xor 1
+  ld (ball_velo_y),a
+  ret
+
+top_b:
+  ld a,(ball_y)
+  cp SCRN_Y+8
+  jr nz,bottom_b
+
+  ld a,(ball_velo_y)
+  xor 1
+  ld (ball_velo_y),a
+
+bottom_b:  ret
+
+
+
+paddle_col:
+  ld a,(player1_x)
+  add 8
+  ld b,a
+  ld a,(ball_x)
+  cp b
+  jr nz,no_col
+
+  ld a,(ball_y)
+  ld b,a
+  ld a,(player1_y)
+  call calcrange
+  cp 1
+  jr z,no_col
+
+  ld a,(ball_velo_x)
+  xor 1
+  ld (ball_velo_x),a
+
+no_col:
+  ld a,(player2_x)
+  sbc 8
+  ld b,a
+  ld a,(ball_x)
+  cp b
+  jr nz,no_col2
+
+  ld a,(ball_y)
+  ld b,a
+  ld a,(player2_y)
+  call calcrange
+  cp 1
+  jr z,no_col2
+
+  ld a,(ball_velo_x)
+  xor 1
+  ld (ball_velo_x),a
+
+no_col2:  ret
+
+
+move_ball:
+  ld a,(ball_velo_x)
+  cp 1
+  jr z,move_right
+
+  ; move left
+  ld a,(ball_x)
+  dec a
+  dec a
+  ld (ball_x),a
+  jr move_x_end
+
+move_right:
+  ld a,(ball_x)
+  inc a
+  inc a
+  ld (ball_x),a
+
+move_x_end:
+  ld a,(ball_velo_y)
+  cp 1
+  jr z,move_down
+
+  ; move up
+  ld a,(ball_y)
+  dec a
+  dec a
+  ld (ball_y),a
+  jr move_y_end
+
+move_down:
+  ld a,(ball_y)
+  inc a
+  inc a
+  ld (ball_y),a
+
+move_y_end: ret
+
+
+reset_ball:
+  ld a,(SCRN_X+8)/2
+  ld (ball_x),a
+  ld a,(SCRN_Y+16)/2
+  ld (ball_y),a
+  ret
+
+
+
+calcrange:
+
+  ; a = paddle y
+  ; b = ball y
+
+  sbc 8
+
+  cp b
+  jr z,calc
+  jr nc,nocalc
+
+  add 40
+  cp b
+  jr z,calc
+  jr c,nocalc
+
+calc: ld a,2
+  ret
+
+
+nocalc:
+  ld a,1
+  ret
+
+
+
+tile_data:
+.byte $00,$00,$00,$00,$00,$00,$00,$00
+.byte $01,$01,$01,$01,$01,$01,$01,$01
+.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.byte $80,$80,$80,$80,$80,$80,$80,$80
+.byte $7c,$c6,$ce,$de,$f6,$e6,$7c,$00
+.byte $30,$70,$30,$30,$30,$30,$fc,$00
+.byte $78,$cc,$0c,$38,$60,$cc,$fc,$00
+.byte $78,$cc,$0c,$38,$0c,$cc,$78,$00
+.byte $1c,$3c,$6c,$cc,$fe,$0c,$1e,$00
+.byte $fc,$c0,$f8,$0c,$0c,$cc,$78,$00
+.byte $38,$60,$c0,$f8,$cc,$cc,$78,$00
+.byte $fc,$cc,$0c,$18,$30,$30,$30,$00
+.byte $78,$cc,$cc,$78,$cc,$cc,$78,$00
+.byte $78,$cc,$cc,$7c,$0c,$18,$70,$00
+
+

@@ -1,0 +1,31 @@
+how to build pong-gb's ca65 version:
+
+"I have gnu make!"
+
+sweet, just go to the cmd and type:
+
+"make" to build.
+"make clean" to clean up the build files.
+
+
+"I don't have make!"
+
+bummer. just type these into the cmd:
+
+ca65 -o pong.o pong.z80
+ld65 -C gb.cfg -o pong.gb pong.o
+rgbfix -v -t "PONG NICKLAUSW" pong.gb
+
+yes, you can make gameboy games in ca65.
+thanks to blargg for that! (one could argue
+that ca65 can really be targeted at anything
+if you write a macro pack for it).
+
+note that you'll still need to use bentley's
+version of rgbds for rgbfix (note: dependency on bison).
+linux users can just use a simple 'make'.
+to build it on windows, use cygwin with
+bison installed, of course.
+
+source: https://github.com/bentley/rgbds
+        https://github.com/cc65/cc65

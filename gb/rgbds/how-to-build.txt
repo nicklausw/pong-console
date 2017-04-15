@@ -22,10 +22,4 @@ linux users can just use a simple 'make'.
 to build it on windows, use cygwin with
 bison installed, of course.
 
-
-when compiling rgbds through cygwin:
-if cygwin complains about string functions
-not existing, go in the makefile and add
-"-D_GNU_SOURCE" to REALCFLAGS.
-
 source: https://github.com/bentley/rgbds
