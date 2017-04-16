@@ -1,5 +1,5 @@
 ; pong by nicklausw
-; rgbds edition!
+; ca65 edition!
 
 
 .include "gb.z80"
