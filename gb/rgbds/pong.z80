@@ -9,7 +9,7 @@ PAUSED = 0
 PLAYING = 1
 
 
-section "ram",bss
+section "ram",wram0
 ball_velo_x db
 ball_velo_y db
 game_on db
@@ -19,45 +19,42 @@ player2score db
 player2loc db
 
 
-;If RGBDS wasn't ridiculous...
-;I could do this vvv
-;section "oamram",oam
-;but nooooo.
+section "oamram",oam
 
-ball_y = _OAMRAM
-ball_x = _OAMRAM+1
-ball_t = _OAMRAM+2
-ball_p = _OAMRAM+3
+ball_y db
+ball_x db
+ball_t db
+ball_p db
 
-player1_y = _OAMRAM+4
-player1_x = _OAMRAM+5
-player1_t = _OAMRAM+6
-player1_p = _OAMRAM+7
+player1_y db
+player1_x db
+player1_t db
+player1_p db
 
-player1_2_y = _OAMRAM+8
-player1_2_x = _OAMRAM+9
-player1_2_t = _OAMRAM+10
-player1_2_p = _OAMRAM+11
+player1_2_y db
+player1_2_x db
+player1_2_t db
+player1_2_p db
 
-player1_3_y = _OAMRAM+12
-player1_3_x = _OAMRAM+13
-player1_3_t = _OAMRAM+14
-player1_3_p = _OAMRAM+15
+player1_3_y db
+player1_3_x db
+player1_3_t db
+player1_3_p db
 
-player2_y = _OAMRAM+16
-player2_x = _OAMRAM+17
-player2_t = _OAMRAM+18
-player2_p = _OAMRAM+19
+player2_y db
+player2_x db
+player2_t db
+player2_p db
 
-player2_2_y = _OAMRAM+20
-player2_2_x = _OAMRAM+21
-player2_2_t = _OAMRAM+22
-player2_2_p = _OAMRAM+23
+player2_2_y db
+player2_2_x db
+player2_2_t db
+player2_2_p db
 
-player2_3_y = _OAMRAM+24
-player2_3_x = _OAMRAM+25
-player2_3_t = _OAMRAM+26
-player2_3_p = _OAMRAM+27
+player2_3_y db
+player2_3_x db
+player2_3_t db
+player2_3_p db
 
 
 
@@ -82,12 +79,8 @@ section "begin",rom0[$100]
   nop
   jp main
 
-; reserve header; rgbfix handles it
-dw 0,0,0,0,0,0,0,0
-dw 0,0,0,0,0,0,0,0
-dw 0,0,0,0,0,0,0,0
-dw 0,0,0,0,0,0,0,0
-dw 0,0,0,0,0,0
+  ; reserve header; rgbfix handles it
+  ds $150-$104
 
 
 section "main",rom0
